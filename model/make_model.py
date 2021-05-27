@@ -38,7 +38,11 @@ class My_Model(tf.keras.Model):
         concat_shape = tf.concat([self.maxpool(conv_1_out), self.maxpool(
             conv_3_out), self.maxpool(conv_5_out)], axis=-1)
 
-        result = self.last_layer(concat_shape)
+        dense1 = self.layer5(concat_shape)
+        dense2 = self.layer6(dense1)
+        dense3 = self.layer7(dense2)
+
+        result = self.last_layer(dense3)
 
         return result
 
