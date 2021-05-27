@@ -17,7 +17,7 @@ import re
 import os
 
 
-def preprocess(comment, _stem=False, okt):
+def preprocess(comment, okt, _stem=False):
 
     try:
         comment_text = re.sub("[^가-힣ㄱ-ㅎㅏ-ㅣ\\s]", "", comment)
@@ -33,56 +33,6 @@ def preprocess(comment, _stem=False, okt):
     return word_comment
 
 
-def make_tokenizer():
-    train_data = pd.read_csv('BASE/data/hate_speech_binary_dataset_ver1.0.csv')
-    okt = Okt()
-    label_to_id = {'욕설': 0, '정상': 1}
-    id_to_label = {0: '욕설', 1: '정상'}
-
-    inputs, outputs = [], []
-
-    for sentence, label in zip(train_data['sentence'], train_data['label']):
-        inputs.append(preprocess(sentence, True, okt))
-        outputs.append(label)
-
-    tokenizer = Tokenizer(oov_token="<UNK>",)  # 없는 단어 1으로 표시
-    # fit_on_texts() 메서드는 문자 데이터를 입력받아서 리스트의 형태로 변환
-    tokenizer.fit_on_texts(inputs)
-    # tokenizer의 word_index 속성은 단어와 숫자의 키-값 쌍을 포함하는 딕셔너리를 반환
-    word_vocab = tokenizer.word_index
-
-    make_config(word_vocab, id_to_label)  # data_configs2 생성
-    inputs = tokenizer.texts_to_sequences(inputs)
-    padded_inputs = pad_sequences(inputs, maxlen=22, padding='post')
-    input = padded_inputs.tolist()
-    output = outputs
-
-    model_train = {
-        'inputs': inputs,
-        'outputs': outputs
-    }
-
-    with open('BASE/data/model_train.pickle', 'wb') as fp:
-        pickle.dump(model_train, fp, protocol=pickle.HIGHEST_PROTOCOL)
-
-    with open('BASE/configs/tokenizer2.pickle', 'wb') as handle:
-        pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def get_tokenizer():
-    if os.path.isfile('BASE/tokenizer2.pickle'):
-        with open('BASE/tokenizer2.pickle', 'rb') as f:
-            tokenizer = pickle.load(f)
-        return tokenizer
-    else:
-        make_tokenizer()
-        try:
-            with open('BASE/tokenizer2.pickle', 'rb') as f:
-                tokenizer = pickle.load(f)
-        except:
-            print('No tokenizer exist!')
-
-
 def make_configs(word_vocab, id_to_label):
 
     data_configs = {}
@@ -93,5 +43,56 @@ def make_configs(word_vocab, id_to_label):
     # print(data_configs)
     save_configs = json.dumps(data_configs)
 
-    with open("BASE/configs/data_configs2.json", 'w') as f:
+    with open("/content/drive/My Drive/Abuse_filter/configs/data_configs2.json", 'w') as f:
         f.write(save_configs)
+
+
+def make_tokenizer():
+    train_data = pd.read_csv(
+        '/content/drive/My Drive/Abuse_filter/data/hate_speech_binary_dataset_ver1.0.csv')
+    okt = Okt()
+    label_to_id = {'욕설': 0, '정상': 1}
+    id_to_label = {0: '욕설', 1: '정상'}
+
+    inputs, outputs = [], []
+
+    for sentence, label in zip(train_data['sentence'], train_data['label']):
+        inputs.append(preprocess(sentence, okt, True))
+        outputs.append(label)
+
+    tokenizer = Tokenizer(oov_token="<UNK>",)  # 없는 단어 1으로 표시
+    # fit_on_texts() 메서드는 문자 데이터를 입력받아서 리스트의 형태로 변환
+    tokenizer.fit_on_texts(inputs)
+    # tokenizer의 word_index 속성은 단어와 숫자의 키-값 쌍을 포함하는 딕셔너리를 반환
+    word_vocab = tokenizer.word_index
+
+    make_configs(word_vocab, id_to_label)  # data_configs2 생성
+    inputs = tokenizer.texts_to_sequences(inputs)
+    padded_inputs = pad_sequences(inputs, maxlen=22, padding='post')
+    padded_inputs = padded_inputs.tolist()
+    output = outputs
+
+    model_train = {
+        'inputs': padded_inputs,
+        'outputs': outputs
+    }
+
+    with open('/content/drive/My Drive/Abuse_filter/data/model_train.pickle', 'wb') as fp:
+        pickle.dump(model_train, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open('/content/drive/My Drive/Abuse_filter/configs/tokenizer2.pickle', 'wb') as handle:
+        pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def get_tokenizer():
+    if os.path.isfile('/content/drive/My Drive/Abuse_filter/tokenizer2.pickle'):
+        with open('/content/drive/My Drive/Abuse_filter/tokenizer2.pickle', 'rb') as f:
+            tokenizer = pickle.load(f)
+        return tokenizer
+    else:
+        make_tokenizer()
+        try:
+            with open('/content/drive/My Drive/Abuse_filter/tokenizer2.pickle', 'rb') as f:
+                tokenizer = pickle.load(f)
+        except:
+            print('No tokenizer exist!')
